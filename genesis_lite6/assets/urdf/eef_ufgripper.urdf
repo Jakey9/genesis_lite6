@@ -1,0 +1,86 @@
+<?xml version="1.0" ?>
+<robot name="eef_ufgripper">
+  <joint name="gripper_fix" type="fixed">
+    <parent link="link_eef"/>
+    <child link="ufgripper_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <link name="ufgripper_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.030" rpy="0 0 0"/>
+      <mass value="0.25"/>
+      <inertia ixx="0.00047106" ixy="3.9292e-07" ixz="2.6537e-06" iyy="0.00033072" iyz="-1.0975e-05" izz="0.00025642"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="../meshes/gripper/lite/visual/shell.dae"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="../meshes/gripper/lite/visual/shell.dae"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+  </link>
+  <link name="ufgripper_finger1">
+    <inertial>
+      <origin xyz="0.0 0.01 0.0086" rpy="0 0 0"/>
+      <mass value="0.0163"/>
+      <inertia ixx="1.425e-06" ixy="0.0" ixz="0.0" iyy="1.63e-06" iyz="-3.1e-07" izz="8.63e-07"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="../meshes/gripper/lite/visual/finger1.dae"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="../meshes/gripper/lite/visual/finger1.dae"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+  </link>
+  <link name="ufgripper_finger2">
+    <inertial>
+      <origin xyz="0.0 -0.01 0.0086" rpy="0 0 0"/>
+      <mass value="0.0163"/>
+      <inertia ixx="1.425e-06" ixy="0.0" ixz="0.0" iyy="1.63e-06" iyz="3.1e-07" izz="8.63e-07"/>
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="../meshes/gripper/lite/visual/finger2.dae"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="../meshes/gripper/lite/visual/finger2.dae"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+  </link>
+  <joint name="finger_joint1" type="prismatic">
+    <origin xyz="0 0 0.0543" rpy="0 0 0"/>
+    <parent link="ufgripper_link"/>
+    <child link="ufgripper_finger1"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="5" lower="0" upper="0.0089" velocity="2"/>
+  </joint>
+  <joint name="finger_joint2" type="prismatic">
+    <origin xyz="0 0 0.0543" rpy="0 0 0"/>
+    <parent link="ufgripper_link"/>
+    <child link="ufgripper_finger2"/>
+    <axis xyz="0 -1 0"/>
+    <limit effort="5" lower="0" upper="0.0089" velocity="2"/>
+    <mimic joint="finger_joint1" multiplier="1" offset="0"/>
+  </joint>
+  <link name="link_tcp"/>
+  <joint name="joint_tcp" type="fixed">
+    <origin xyz="0 0 0.0836" rpy="0 0 0"/>
+    <parent link="ufgripper_link"/>
+    <child link="link_tcp"/>
+  </joint>
+</robot>

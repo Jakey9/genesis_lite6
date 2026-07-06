@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: genesis-lite6
+Version: 0.1.0
+Summary: UFFactory Lite6 robot integration for Genesis World simulator
+Requires-Python: >=3.8
+Requires-Dist: genesis-world
+Requires-Dist: numpy
+Provides-Extra: dev
+Requires-Dist: pyyaml; extra == "dev"

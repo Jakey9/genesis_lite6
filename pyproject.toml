@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "genesis-lite6"
+version = "0.1.0"
+description = "UFFactory Lite6 robot integration for Genesis World simulator"
+requires-python = ">=3.8"
+dependencies = [
+    "genesis-world",
+    "numpy",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pyyaml",
+]
+
+[tool.setuptools.packages.find]
+include = ["genesis_lite6*"]
+
+[tool.setuptools.package-data]
+genesis_lite6 = [
+    "assets/**/*.urdf",
+    "assets/**/*.dae",
+]

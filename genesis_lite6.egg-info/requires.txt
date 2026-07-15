@@ -1,5 +1,0 @@
-genesis-world
-numpy
-
-[dev]
-pyyaml

@@ -1,1 +1,4 @@
-genesis_lite6.egg-info//
+*.egg-info/
+__pycache__/
+*.pyc
+.cache/

@@ -34,7 +34,79 @@ for _ in range(1000):
     scene.step()
 ```
 
-See the `examples/` directory for more complete demos (PD control, inverse kinematics).
+## Running the examples
+
+All examples assume `genesis-world` and `genesis_lite6` are installed.
+
+### Minimal simulation
+
+Load the Lite6 and step the physics for 1000 frames:
+
+```bash
+python examples/hello_lite6.py
+```
+
+### PD position control
+
+Move the arm through several joint poses, then cycle the gripper open/close:
+
+```bash
+python examples/control_lite6.py
+```
+
+### Inverse kinematics
+
+Trace a circular trajectory with the end-effector using the built-in IK solver, then replay it with PD control:
+
+```bash
+python examples/ik_lite6.py
+```
+
+### GELLO teleoperation
+
+Drive the simulated Lite6 in real time with a Zhonglin GELLO leader arm. Optionally mirror the commands to a real Lite6 as well, using Genesis as a live 3D visualizer.
+
+**Prerequisites**
+
+1. Install `gello_software`:
+
+   ```bash
+   pip install -e /path/to/gello_software
+   ```
+
+2. Calibrate joint offsets by running the calibration script in `gello_software`:
+
+   ```bash
+   python scripts/zhonglin_get_offset.py
+   ```
+
+   Then paste the resulting offset values into the constants at the top of `examples/teleop_zhonglin.py` (`ZHONGLIN_JOINT_OFFSETS`, etc.).
+
+3. Plug in the GELLO leader arm (default port: `/dev/ttyUSB0`).
+
+**Sim only** (Genesis visualizer):
+
+```bash
+python examples/teleop_zhonglin.py
+```
+
+**Sim + real robot** (also commands the physical Lite6 via xArm SDK):
+
+```bash
+python examples/teleop_zhonglin.py --real-ip 192.168.1.226
+```
+
+**Other options:**
+
+```bash
+# Use a different serial port
+python examples/teleop_zhonglin.py --port /dev/ttyUSB1
+
+# Disable gripper control
+python examples/teleop_zhonglin.py --no-gripper
+```
+
+The teleop loop runs at 30 Hz. Press `Ctrl+C` to stop.
 
 ## Package structure
 
@@ -56,6 +128,7 @@ examples/
   hello_lite6.py       # Minimal load + simulate
   control_lite6.py     # PD position control demo
   ik_lite6.py          # Inverse kinematics demo
+  teleop_zhonglin.py   # GELLO teleoperation (sim + optional real)
 ```
 
 ## Modular EEF system

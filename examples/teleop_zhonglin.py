@@ -32,7 +32,6 @@ from genesis_lite6.config import (
     DEFAULT_FORCE_UPPER,
     DEFAULT_KP,
     DEFAULT_KV,
-    HOME_QPOS,
 )
 
 # -----------------------------------------------------------------------
@@ -40,14 +39,16 @@ from genesis_lite6.config import (
 #   gello_software/scripts/zhonglin_get_offset.py
 # -----------------------------------------------------------------------
 ZHONGLIN_JOINT_IDS = (0, 1, 2, 3, 4, 5)
-ZHONGLIN_JOINT_OFFSETS = (3.1416, 1.5708, 0.0, 0.0, 0.0, 0.0)  # TODO: re-calibrate
-ZHONGLIN_JOINT_SIGNS = (1, 1, 1, 1, 1, 1)
+ZHONGLIN_JOINT_OFFSETS = (2.6245, 2.2370, 2.3797, 1.0733, 2.4172, 0.1155)  # TODO: re-calibrate
+ZHONGLIN_JOINT_SIGNS = (1, 1, 1, 1, -1, 1)
 
 ZHONGLIN_GRIPPER_ID = 6
-ZHONGLIN_GRIPPER_OPEN_DEG = -0.2
-ZHONGLIN_GRIPPER_CLOSE_DEG = -42.0
+ZHONGLIN_GRIPPER_OPEN_DEG = 110.0
+ZHONGLIN_GRIPPER_CLOSE_DEG = 68.2
 
 TELEOP_HZ = 30
+SIM_DT = 0.005
+SIM_SUBSTEPS = max(1, round((1.0 / TELEOP_HZ) / SIM_DT))
 
 
 def main():
@@ -84,7 +85,7 @@ def main():
         real=True,
         port=args.port,
         gripper_config=gripper_config,
-        start_joints=HOME_QPOS,
+        start_joints=np.zeros(7) if with_gripper else np.zeros(6),
     )
     print("GELLO connected!")
 
@@ -115,7 +116,7 @@ def main():
             camera_lookat=(0.0, 0.0, 0.3),
             camera_fov=40,
         ),
-        sim_options=gs.options.SimOptions(dt=1.0 / TELEOP_HZ),
+        sim_options=gs.options.SimOptions(dt=SIM_DT),
         show_viewer=True,
     )
 
@@ -140,13 +141,30 @@ def main():
         dofs_idx_local=motors_dof_idx,
     )
 
-    # Move to home
-    lite6.control_dofs_position(HOME_QPOS, motors_dof_idx)
+    # Gripper DOF lookup (cached outside loop)
+    finger_dof = None
+    finger_range = None
+    if with_gripper:
+        finger_joint = lite6.get_joint("finger_joint1")
+        finger_dof = finger_joint.dofs_idx_local[0]
+        finger_range = (finger_joint.dofs_limit[0][0], finger_joint.dofs_limit[0][1])
+        lite6.set_dofs_kp(kp=np.array([500.0]), dofs_idx_local=[finger_dof])
+        lite6.set_dofs_kv(kv=np.array([50.0]), dofs_idx_local=[finger_dof])
+        lite6.set_dofs_force_range(
+            lower=np.array([-5.0]), upper=np.array([5.0]), dofs_idx_local=[finger_dof],
+        )
+
+    # Indices of continuous (full-rotation) joints that need angle unwrapping
+    CONTINUOUS_JOINT_INDICES = [0, 3, 5]  # joint1, joint4, joint6
+
+    # Robot starts at qpos=0 (URDF default), matching GELLO convention.
+    # Hold position to let PD control settle before teleop begins.
+    lite6.control_dofs_position(np.zeros(6), motors_dof_idx)
     for _ in range(50):
         scene.step()
 
     mode_str = "sim + real" if real_robot else "sim only"
-    print(f"Teleop running at {TELEOP_HZ} Hz ({mode_str}). Move the GELLO arm to control.")
+    print(f"Teleop running at {TELEOP_HZ} Hz, {SIM_SUBSTEPS} substeps ({mode_str}).")
     print("Press Ctrl+C to stop.")
 
     rate_dt = 1.0 / TELEOP_HZ
@@ -156,26 +174,26 @@ def main():
             t_start = time.monotonic()
 
             gello_state = leader.get_joint_state()
-            arm_joints = gello_state[:6]
+            arm_joints = gello_state[:6].copy()
+
+            # Unwrap continuous joints so PD control takes the shortest path
+            current_qpos = lite6.get_dofs_position(motors_dof_idx)
+            if hasattr(current_qpos, 'cpu'):
+                current_qpos = current_qpos.cpu().numpy().flatten()
+            for idx in CONTINUOUS_JOINT_INDICES:
+                delta = arm_joints[idx] - current_qpos[idx]
+                arm_joints[idx] = current_qpos[idx] + (delta + np.pi) % (2 * np.pi) - np.pi
 
             # --- Genesis sim ---
             lite6.control_dofs_position(arm_joints, motors_dof_idx)
 
-            if with_gripper and len(gello_state) > 6:
+            if finger_dof is not None and len(gello_state) > 6:
                 gripper_val = gello_state[6]
-                gripper_joints = lite6.joints
-                gripper_dof_names = [j.name for j in gripper_joints if "finger" in j.name]
-                if gripper_dof_names:
-                    finger_joint = lite6.get_joint(gripper_dof_names[0])
-                    finger_dof = finger_joint.dofs_idx_local[0]
-                    finger_limit = finger_joint.dofs_info[0].limit
-                    finger_pos = gripper_val * (finger_limit[1] - finger_limit[0]) + finger_limit[0]
-                    lite6.control_dofs_position(
-                        np.array([finger_pos]),
-                        [finger_dof],
-                    )
+                finger_pos = (1.0 - gripper_val) * (finger_range[1] - finger_range[0]) + finger_range[0]
+                lite6.control_dofs_position(np.array([finger_pos]), [finger_dof])
 
-            scene.step()
+            for _ in range(SIM_SUBSTEPS):
+                scene.step()
 
             # --- Real robot ---
             if real_robot is not None:

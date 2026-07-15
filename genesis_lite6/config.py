@@ -44,17 +44,17 @@ GRIPPER_JOINT_UPPER = np.array([0.0089, 0.0089])
 GRIPPER_EFFORT_LIMIT = 5.0
 
 # ---------------------------------------------------------------------------
-# Home position (arm at a natural upright pose)
+# Home position (all zeros)
 # ---------------------------------------------------------------------------
 
-HOME_QPOS = np.array([0.0, 0.0, math.pi / 2, 0.0, math.pi / 2, 0.0])
+HOME_QPOS = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
 # ---------------------------------------------------------------------------
 # Default PD gains (reasonable starting values, tune per task)
 # ---------------------------------------------------------------------------
 
 DEFAULT_KP = np.array([4500.0, 4500.0, 3500.0, 3500.0, 2000.0, 2000.0])
-DEFAULT_KV = np.array([450.0, 450.0, 350.0, 350.0, 200.0, 200.0])
+DEFAULT_KV = np.array([500.0, 500.0, 400.0, 400.0, 225.0, 225.0])
 
 DEFAULT_FORCE_LOWER = -ARM_EFFORT_LIMITS
 DEFAULT_FORCE_UPPER = ARM_EFFORT_LIMITS
